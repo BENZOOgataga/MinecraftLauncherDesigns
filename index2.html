@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flaze SMP Launcher</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #37a300;
+            --primary-color-glow: rgba(55, 163, 0, 0.7);
+            --primary-color-dark: #2a7700;
+            --accent-color: #00ccff;
+            --dark-bg: #0a0a0e;
+            --panel-bg: #14141c;
+            --panel-overlay: rgba(20, 20, 28, 0.8);
+            --text-color: #e0e0e0;
+            --text-muted: #8a8a9a;
+            --border-color: rgba(255, 255, 255, 0.05);
+            --border-active: rgba(55, 163, 0, 0.6);
+            --border-radius-sm: 5px;
+            --border-radius-md: 8px;
+            --border-radius-lg: 16px;
+            --angled-clip: polygon(0 0, 100% 0, 100% 85%, 95% 100%, 0 100%);
+            --angled-clip-reversed: polygon(0 0, 100% 0, 100% 100%, 0 85%, 5% 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Exo 2', sans-serif;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: var(--text-color);
+            min-height: 100vh;
+            background-image:
+                    radial-gradient(circle at 15% 15%, rgba(55, 163, 0, 0.05) 0%, transparent 20%),
+                    radial-gradient(circle at 85% 85%, rgba(55, 163, 0, 0.05) 0%, transparent 20%),
+                    linear-gradient(to bottom, rgba(0,0,0,0.9), rgba(10,10,14,0.9)),
+                    url('assets/background.png');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-areas:
+                "header header"
+                "sidebar main"
+                "footer footer";
+            grid-template-rows: auto 1fr auto;
+            grid-template-columns: 80px 1fr;
+            height: 100vh;
+            gap: 16px;
+            padding: 16px;
+        }
+
+        /* Header Section */
+        .header {
+            grid-area: header;
+            background: var(--panel-overlay);
+            backdrop-filter: blur(10px);
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: var(--border-radius-lg);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+            animation: glowBar 3s infinite;
+        }
+
+        @keyframes glowBar {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            position: relative;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .logo span {
+            background: linear-gradient(120deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            padding-left: 4px;
+            position: relative;
+        }
+
+        .logo span::after {
+            content: "";
+            position: absolute;
+            bottom: -3px;
+            left: 4px;
+            width: 100%;
+            height: 2px;
+            background: var(--primary-color);
+            box-shadow: 0 0 8px var(--primary-color-glow);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(20, 20, 28, 0.7);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            border: 1px solid var(--border-color);
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            box-shadow: 0 0 10px var(--primary-color-glow);
+            position: relative;
+        }
+
+        .status-indicator::after {
+            content: "";
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: transparent;
+            border: 1px solid var(--primary-color);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+
+        .latency {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: rgba(20, 20, 28, 0.7);
+            border-radius: 20px;
+            font-size: 14px;
+            border: 1px solid var(--border-color);
+        }
+
+        .latency i {
+            color: var(--primary-color);
+        }
+
+        /* Sidebar Section */
+        .sidebar {
+            grid-area: sidebar;
+            background: var(--panel-overlay);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius-lg);
+            border: 1px solid var(--border-color);
+            padding: 16px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        }
+
+        .social-links {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .social-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(55, 163, 0, 0.1);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .social-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: all 0.5s ease;
+        }
+
+        .social-button:hover {
+            background: rgba(55, 163, 0, 0.2);
+            border-color: var(--border-active);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(55, 163, 0, 0.3);
+        }
+
+        .social-button:hover::before {
+            left: 100%;
+        }
+
+        .social-button:hover i {
+            color: var(--primary-color);
+        }
+
+        /* Main Content Section */
+        .main {
+            grid-area: main;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
+            overflow-y: auto;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .section-title {
+            background: rgba(55, 163, 0, 0.1);
+            border: 1px solid var(--border-active);
+            color: var(--primary-color);
+            padding: 8px 32px;
+            font-size: 18px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 30px;
+            box-shadow: 0 0 15px rgba(55, 163, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section-title::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 50px;
+            height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: skewX(-20deg);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -50px; }
+            100% { left: 100%; }
+        }
+
+        .news {
+            background: var(--panel-overlay);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius-lg);
+            border: 1px solid var(--border-color);
+            padding: 24px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .news-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex: 1;
+        }
+
+        .news-item {
+            background: rgba(20, 20, 28, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            padding: 16px;
+            display: grid;
+            grid-template-columns: 60px 1fr;
+            gap: 16px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            clip-path: var(--angled-clip);
+        }
+
+        .news-item::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: var(--primary-color);
+            box-shadow: 0 0 15px var(--primary-color-glow);
+        }
+
+        .news-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+            border-color: var(--border-active);
+        }
+
+        .avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid var(--border-color);
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .news-content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .news-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .news-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .news-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .author {
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .news-body {
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+
+        /* Footer Section */
+        .footer {
+            grid-area: footer;
+            background: var(--panel-overlay);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius-lg);
+            border: 1px solid var(--border-color);
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .profile-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid var(--border-color);
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .profile-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .profile-status {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .version-selector {
+            background: rgba(20, 20, 28, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            padding: 8px 16px;
+            color: var(--text-color);
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            clip-path: var(--angled-clip-reversed);
+        }
+
+        .version-selector:hover {
+            border-color: var(--border-active);
+        }
+
+        .play-button {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-color-dark));
+            color: white;
+            border: none;
+            padding: 12px 36px;
+            font-size: 18px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: var(--border-radius-md);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            clip-path: var(--angled-clip);
+            box-shadow: 0 0 20px rgba(55, 163, 0, 0.4);
+        }
+
+        .play-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: all 0.5s ease;
+        }
+
+        .play-button:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 10px 25px rgba(55, 163, 0, 0.5);
+        }
+
+        .play-button:hover::before {
+            left: 100%;
+        }
+
+        .settings-button {
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            background: rgba(20, 20, 28, 0.7);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            clip-path: var(--angled-clip-reversed);
+        }
+
+        .settings-button:hover {
+            background: rgba(55, 163, 0, 0.2);
+            border-color: var(--border-active);
+            color: var(--primary-color);
+            transform: rotate(30deg);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .grid-container {
+                grid-template-areas:
+                    "header"
+                    "main"
+                    "sidebar"
+                    "footer";
+                grid-template-rows: auto 1fr auto auto;
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                flex-direction: row;
+                height: 80px;
+                padding: 0 16px;
+            }
+
+            .social-links {
+                flex-direction: row;
+                width: 100%;
+                justify-content: space-around;
+            }
+
+            .footer {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .controls {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .play-button {
+                width: 100%;
+            }
+
+            .user-info {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="grid-container">
+    <header class="header">
+        <div class="logo">Flaze <span>SMP</span></div>
+        <div class="user-info">
+            <div class="connection-status">
+                <div class="status-indicator"></div>
+                <span>Online</span>
+            </div>
+            <div class="latency">
+                <i class="fas fa-signal"></i>
+                <span>25ms</span>
+            </div>
+        </div>
+    </header>
+
+    <aside class="sidebar">
+        <div class="social-links">
+            <a href="#" class="social-button">
+                <i class="fab fa-discord"></i>
+            </a>
+            <a href="#" class="social-button">
+                <i class="fab fa-github"></i>
+            </a>
+            <a href="#" class="social-button">
+                <i class="fab fa-youtube"></i>
+            </a>
+        </div>
+    </aside>
+
+    <main class="main">
+        <div class="news">
+            <div class="section-header">
+                <div class="section-title">Actualités</div>
+            </div>
+
+            <div class="news-list">
+                <div class="news-item">
+                    <div class="avatar">
+                        <img src="assets/biomes.png" alt="Admin avatar">
+                    </div>
+                    <div class="news-content">
+                        <div class="news-header">
+                            <div class="news-title">New Biomes Update</div>
+                            <div class="news-meta">
+                                <span class="author">Admin</span>
+                                <span>May 15, 2025</span>
+                            </div>
+                        </div>
+                        <div class="news-body">
+                            Explore the newly added custom biomes with unique mobs and resources. The new terrain generation creates more realistic landscapes with caves and cliffs.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="news-item">
+                    <div class="avatar">
+                        <img src="assets/opti.png" alt="Developer avatar">
+                    </div>
+                    <div class="news-content">
+                        <div class="news-header">
+                            <div class="news-title">Server Optimization</div>
+                            <div class="news-meta">
+                                <span class="author">Developer</span>
+                                <span>May 2, 2025</span>
+                            </div>
+                        </div>
+                        <div class="news-body">
+                            Improved server performance and reduced lag during peak hours. Players should notice a significant improvement in gameplay experience.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="news-item">
+                    <div class="avatar">
+                        <img src="assets/img.png" alt="EventManager avatar">
+                    </div>
+                    <div class="news-content">
+                        <div class="news-header">
+                            <div class="news-title">Community Build Contest</div>
+                            <div class="news-meta">
+                                <span class="author">EventManager</span>
+                                <span>April 25, 2025</span>
+                            </div>
+                        </div>
+                        <div class="news-body">
+                            Join our monthly building competition with amazing rewards! This month's theme is "Futuristic Cities". Submit your builds by the end of the month.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="user-profile">
+            <div class="profile-avatar">
+                <img src="https://s.namemc.com/2d/skin/face.png?id=88bef3ef80575029&scale=4" alt="Player avatar">
+            </div>
+            <div class="profile-info">
+                <div class="profile-name">BENZOOgataga</div>
+                <div class="profile-status">Logged in</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <select class="version-selector">
+                <option value="en">English</option>
+                <option value="fr">French</option>
+            </select>
+            <button class="play-button">PLAY</button>
+            <button class="settings-button">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
+    </footer>
+</div>
+</body>
+</html>
